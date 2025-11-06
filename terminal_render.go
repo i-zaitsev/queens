@@ -8,7 +8,7 @@ import (
 	"golang.org/x/term"
 )
 
-func renderScreen(queens Queens, cursorRow, cursorCol int, showHelp bool, noExit bool, hard bool, commandBuffer string) {
+func renderScreen(queens Queens, cursorRow, cursorCol int, showHelp bool, noExit bool, hard bool, commandBuffer string, solved [12]int) {
 	fmt.Print("\033[H\033[2J")
 
 	termWidth := getTerminalWidth()
@@ -26,6 +26,10 @@ func renderScreen(queens Queens, cursorRow, cursorCol int, showHelp bool, noExit
 	fmt.Print("\r\n")
 
 	renderStatus(queens, showHelp, termWidth, isSolved, hard)
+
+	fmt.Print("\r\n")
+
+	renderDiscoveryGrid(termWidth, solved)
 
 	renderControls(termWidth, isSolved, noExit, hard)
 
@@ -83,6 +87,36 @@ func renderTitle(termWidth int, isSolved bool) {
 	printCentered("║   8-Queens Puzzle (v1.0)   ║", termWidth)
 	printCentered("╚════════════════════════════╝", termWidth)
 	fmt.Print("\033[0m")
+	fmt.Print("\r\n")
+}
+
+func renderDiscoveryGrid(termWidth int, solved [12]int) {
+	fmt.Print("\033[36m")
+	printCentered("Fundamental Solutions:", termWidth)
+	fmt.Print("\033[0m")
+
+	row1 := ""
+	for i := 0; i < 6; i++ {
+		cellNum := fmt.Sprintf("%02d", i+1)
+		if solved[i] == 1 {
+			row1 += fmt.Sprintf("\033[32m[%s]\033[0m ", cellNum)
+		} else {
+			row1 += fmt.Sprintf("[%s] ", cellNum)
+		}
+	}
+	printCentered(strings.TrimSpace(row1), termWidth)
+
+	row2 := ""
+	for i := 6; i < 12; i++ {
+		cellNum := fmt.Sprintf("%02d", i+1)
+		if solved[i] == 1 {
+			row2 += fmt.Sprintf("\033[32m[%s]\033[0m ", cellNum)
+		} else {
+			row2 += fmt.Sprintf("[%s] ", cellNum)
+		}
+	}
+	printCentered(strings.TrimSpace(row2), termWidth)
+
 	fmt.Print("\r\n")
 }
 

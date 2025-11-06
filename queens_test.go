@@ -1,6 +1,11 @@
 package main
 
-import "testing"
+import (
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+)
 
 func TestQueensPlacement(t *testing.T) {
 	q := NewQueens()
@@ -157,5 +162,62 @@ func TestQueensReset(t *testing.T) {
 	// Should be able to place queens again
 	if err := q.PlaceQueen(0, 0); err != nil {
 		t.Errorf("Failed to place queen after reset: %v", err)
+	}
+}
+
+func TestFundamentalSolutions(t *testing.T) {
+	files, err := filepath.Glob("boards/*.txt")
+	if err != nil {
+		t.Fatalf("Failed to read boards directory: %v", err)
+	}
+
+	if len(files) != 12 {
+		t.Fatalf("Expected 12 solution files, found %d", len(files))
+	}
+
+	for _, file := range files {
+		t.Run(filepath.Base(file), func(t *testing.T) {
+			content, err := os.ReadFile(file)
+			if err != nil {
+				t.Fatalf("Failed to read file: %v", err)
+			}
+
+			lines := strings.Split(strings.TrimSpace(string(content)), "\n")
+			if len(lines) != 8 {
+				t.Fatalf("Expected 8 lines, got %d", len(lines))
+			}
+
+			var positions []Position
+			for row, line := range lines {
+				line = strings.TrimSpace(line)
+				if len(line) != 8 {
+					t.Fatalf("Row %d: expected 8 characters, got %d", row, len(line))
+				}
+
+				col := strings.Index(line, "Q")
+				if col == -1 {
+					t.Fatalf("Row %d: no queen found", row)
+				}
+
+				if strings.Count(line, "Q") != 1 {
+					t.Fatalf("Row %d: expected exactly one queen, got %d", row, strings.Count(line, "Q"))
+				}
+
+				positions = append(positions, Position{Row: row, Col: col})
+			}
+
+			q := Queens{
+				queens: positions,
+				symbol: SymbolBlack,
+			}
+
+			if !q.IsSolved() {
+				t.Errorf("Board is not a valid solution. Positions: %v", positions)
+			}
+
+			if q.Count() != 8 {
+				t.Errorf("Expected 8 queens, got %d", q.Count())
+			}
+		})
 	}
 }
