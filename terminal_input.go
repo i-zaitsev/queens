@@ -24,7 +24,6 @@ const (
 	CodeUp
 	CodeDown
 	CodePlace
-	CodeRemove
 	CodeHelp
 	CodeSymbolBlack
 	CodeSymbolWhite
@@ -113,8 +112,6 @@ func (t *Terminal) ReadInput() (Cmd, error) {
 				return NewCmd(CodeSymbolAscii), nil
 			} else if char == ' ' || char == '\r' || char == '\n' {
 				return NewCmd(CodePlace), nil
-			} else if char == 'x' || char == 'X' || char == 127 || char == 8 {
-				return NewCmd(CodeRemove), nil
 			}
 		} else if n == 3 && buf[0] == 0x1b && buf[1] == '[' {
 			switch buf[2] {

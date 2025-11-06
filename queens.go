@@ -228,17 +228,11 @@ func (q *Queens) Pretty(cursorRow, cursorCol int, showAttacked bool, hardMode bo
 				if hardMode {
 					queenUnderAttack := q.IsQueenUnderAttack(row, col)
 					if isCursor {
-						if queenUnderAttack {
-							result.WriteString(fmt.Sprintf("\033[1;31;7m %s \033[0m", queenSymbol))
-						} else {
-							result.WriteString(fmt.Sprintf("\033[1;32;7m %s \033[0m", queenSymbol))
-						}
+						result.WriteString(fmt.Sprintf("\033[1;33;7m %s \033[0m", queenSymbol))
+					} else if queenUnderAttack {
+						result.WriteString(fmt.Sprintf("\033[1;31;7m %s \033[0m", queenSymbol))
 					} else {
-						if queenUnderAttack {
-							result.WriteString(fmt.Sprintf("\033[1;31m %s \033[0m", queenSymbol))
-						} else {
-							result.WriteString(fmt.Sprintf("\033[1;32m %s \033[0m", queenSymbol))
-						}
+						result.WriteString(fmt.Sprintf("\033[1;32m %s \033[0m", queenSymbol))
 					}
 				} else {
 					if isCursor {

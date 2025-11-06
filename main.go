@@ -94,26 +94,20 @@ func main() {
 				renderScreen(queens, cursorRow, cursorCol, showHelp, *noExit, *hard, commandBuffer)
 
 			case CodePlace:
-				if queens.Count() >= 8 {
-					break
-				}
-
-				if *hard {
-					if !queens.HasQueen(cursorRow, cursorCol) {
+				if queens.HasQueen(cursorRow, cursorCol) {
+					queens.RemoveQueen(cursorRow, cursorCol)
+					renderScreen(queens, cursorRow, cursorCol, showHelp, *noExit, *hard, commandBuffer)
+				} else if queens.Count() < 8 {
+					if *hard {
 						queens.queens = append(queens.queens, Position{Row: cursorRow, Col: cursorCol})
 						renderScreen(queens, cursorRow, cursorCol, showHelp, *noExit, *hard, commandBuffer)
-					}
-				} else {
-					if err := queens.PlaceQueen(cursorRow, cursorCol); err == nil {
-						renderScreen(queens, cursorRow, cursorCol, showHelp, *noExit, *hard, commandBuffer)
 					} else {
-						renderScreen(queens, cursorRow, cursorCol, showHelp, *noExit, *hard, commandBuffer)
+						if err := queens.PlaceQueen(cursorRow, cursorCol); err == nil {
+							renderScreen(queens, cursorRow, cursorCol, showHelp, *noExit, *hard, commandBuffer)
+						} else {
+							renderScreen(queens, cursorRow, cursorCol, showHelp, *noExit, *hard, commandBuffer)
+						}
 					}
-				}
-
-			case CodeRemove:
-				if err := queens.RemoveQueen(cursorRow, cursorCol); err == nil {
-					renderScreen(queens, cursorRow, cursorCol, showHelp, *noExit, *hard, commandBuffer)
 				}
 
 			case CodeUp:

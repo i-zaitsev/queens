@@ -120,8 +120,7 @@ func renderControls(termWidth int, isSolved bool, noExit bool, hard bool) {
 	if !hard {
 		printCentered("│ [h]         Toggle help    │", termWidth)
 	}
-	printCentered("│ [Space]     Place queen    │", termWidth)
-	printCentered("│ [x/Bksp]    Remove queen   │", termWidth)
+	printCentered("│ [Space]     Toggle queen   │", termWidth)
 	printCentered("│ [b/w/q]     Change symbol  │", termWidth)
 	printCentered("│ [Arrows]    Move cursor    │", termWidth)
 	printCentered("└────────────────────────────┘", termWidth)
