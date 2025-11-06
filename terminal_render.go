@@ -8,7 +8,7 @@ import (
 	"golang.org/x/term"
 )
 
-func renderScreen(queens Queens, cursorRow, cursorCol int, showHelp bool, noExit bool, hard bool, commandBuffer string, solved [12]int) {
+func renderScreen(queens Queens, cursorRow, cursorCol int, showHelp bool, noExit bool, hard bool, commandBuffer string, solved [12]int, prizes []Prize) {
 	fmt.Print("\033[H\033[2J")
 
 	termWidth := getTerminalWidth()
@@ -30,6 +30,14 @@ func renderScreen(queens Queens, cursorRow, cursorCol int, showHelp bool, noExit
 	fmt.Print("\r\n")
 
 	renderDiscoveryGrid(termWidth, solved)
+
+	fmt.Print("\r\n")
+
+	solvedCount := 0
+	for _, s := range solved {
+		solvedCount += s
+	}
+	renderPrizes(termWidth, prizes, solvedCount)
 
 	renderControls(termWidth, isSolved, noExit, hard)
 
@@ -87,6 +95,25 @@ func renderTitle(termWidth int, isSolved bool) {
 	printCentered("║   8-Queens Puzzle (v1.0)   ║", termWidth)
 	printCentered("╚════════════════════════════╝", termWidth)
 	fmt.Print("\033[0m")
+	fmt.Print("\r\n")
+}
+
+func renderPrizes(termWidth int, prizes []Prize, solvedCount int) {
+	fmt.Print("\033[36m")
+	printCentered("Prizes:", termWidth)
+	fmt.Print("\033[0m")
+
+	for _, prize := range prizes {
+		prizeText := fmt.Sprintf("[+ %3d¢] %s", prize.Cents, prize.Label)
+		if solvedCount >= prize.Solutions {
+			fmt.Print("\033[32m")
+			printCentered(prizeText, termWidth)
+			fmt.Print("\033[0m")
+		} else {
+			printCentered(prizeText, termWidth)
+		}
+	}
+
 	fmt.Print("\r\n")
 }
 
