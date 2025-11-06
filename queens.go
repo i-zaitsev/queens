@@ -121,6 +121,32 @@ func (q *Queens) IsUnderAttack(row, col int) bool {
 	return false
 }
 
+// IsQueenUnderAttack checks if a queen at the given position is under attack by any OTHER queen
+func (q *Queens) IsQueenUnderAttack(row, col int) bool {
+	for _, queen := range q.queens {
+		// Skip the queen at the position we're checking
+		if queen.Row == row && queen.Col == col {
+			continue
+		}
+
+		// Same row
+		if queen.Row == row {
+			return true
+		}
+		// Same column
+		if queen.Col == col {
+			return true
+		}
+		// Diagonal (both diagonals)
+		rowDiff := abs(queen.Row - row)
+		colDiff := abs(queen.Col - col)
+		if rowDiff == colDiff {
+			return true
+		}
+	}
+	return false
+}
+
 func (q *Queens) GetAttackedPositions() map[Position]bool {
 	attacked := make(map[Position]bool)
 
@@ -168,18 +194,30 @@ func (q *Queens) Count() int {
 }
 
 func (q *Queens) IsSolved() bool {
-	return len(q.queens) == boardSize
+	// Must have exactly 8 queens
+	if len(q.queens) != boardSize {
+		return false
+	}
+
+	// All queens must be safe (not under attack)
+	for _, queen := range q.queens {
+		if q.IsQueenUnderAttack(queen.Row, queen.Col) {
+			return false
+		}
+	}
+
+	return true
 }
 
 func (q *Queens) Reset() {
 	q.queens = make([]Position, 0, boardSize)
 }
 
-func (q *Queens) Pretty(cursorRow, cursorCol int, showAttacked bool) string {
+func (q *Queens) Pretty(cursorRow, cursorCol int, showAttacked bool, hardMode bool) string {
 	var result strings.Builder
 
 	attacked := make(map[Position]bool)
-	if showAttacked {
+	if showAttacked && !hardMode {
 		attacked = q.GetAttackedPositions()
 	}
 
@@ -205,10 +243,29 @@ func (q *Queens) Pretty(cursorRow, cursorCol int, showAttacked bool) string {
 			isAttacked := attacked[Position{Row: row, Col: col}]
 
 			if hasQueen {
-				if isCursor {
-					result.WriteString(fmt.Sprintf("\033[1;7m %s \033[0m", queenSymbol)) // Bold + inverse
+				if hardMode {
+					// Hard mode: show queens in green or red based on attack status
+					queenUnderAttack := q.IsQueenUnderAttack(row, col)
+					if isCursor {
+						if queenUnderAttack {
+							result.WriteString(fmt.Sprintf("\033[1;31;7m %s \033[0m", queenSymbol)) // Red + inverse
+						} else {
+							result.WriteString(fmt.Sprintf("\033[1;32;7m %s \033[0m", queenSymbol)) // Green + inverse
+						}
+					} else {
+						if queenUnderAttack {
+							result.WriteString(fmt.Sprintf("\033[1;31m %s \033[0m", queenSymbol)) // Red
+						} else {
+							result.WriteString(fmt.Sprintf("\033[1;32m %s \033[0m", queenSymbol)) // Green
+						}
+					}
 				} else {
-					result.WriteString(fmt.Sprintf("\033[1m %s \033[0m", queenSymbol)) // Bold
+					// Normal mode: white queens
+					if isCursor {
+						result.WriteString(fmt.Sprintf("\033[1;7m %s \033[0m", queenSymbol)) // Bold + inverse
+					} else {
+						result.WriteString(fmt.Sprintf("\033[1m %s \033[0m", queenSymbol)) // Bold
+					}
 				}
 			} else if isCursor {
 				result.WriteString("\033[1;7m   \033[0m") // Inverse cursor

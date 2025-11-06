@@ -8,7 +8,7 @@ import (
 	"golang.org/x/term"
 )
 
-func renderScreen(queens Queens, cursorRow, cursorCol int, showHelp bool, noExit bool, commandBuffer string) {
+func renderScreen(queens Queens, cursorRow, cursorCol int, showHelp bool, noExit bool, hard bool, commandBuffer string) {
 	// Clear screen and move cursor to top-left
 	fmt.Print("\033[H\033[2J")
 
@@ -19,7 +19,7 @@ func renderScreen(queens Queens, cursorRow, cursorCol int, showHelp bool, noExit
 	renderTitle(termWidth, isSolved)
 
 	// Render the board
-	prettyString := queens.Pretty(cursorRow, cursorCol, showHelp)
+	prettyString := queens.Pretty(cursorRow, cursorCol, showHelp, hard)
 	lines := strings.Split(prettyString, "\n")
 
 	for _, line := range lines {
@@ -29,10 +29,10 @@ func renderScreen(queens Queens, cursorRow, cursorCol int, showHelp bool, noExit
 	fmt.Print("\r\n")
 
 	// Render status
-	renderStatus(queens, showHelp, termWidth, isSolved)
+	renderStatus(queens, showHelp, termWidth, isSolved, hard)
 
 	// Render controls
-	renderControls(termWidth, isSolved, noExit)
+	renderControls(termWidth, isSolved, noExit, hard)
 
 	// Render command line if in command mode
 	if commandBuffer != "" {
@@ -99,7 +99,7 @@ func renderTitle(termWidth int, isSolved bool) {
 	fmt.Print("\r\n")
 }
 
-func renderStatus(queens Queens, showHelp bool, termWidth int, isSolved bool) {
+func renderStatus(queens Queens, showHelp bool, termWidth int, isSolved bool, hard bool) {
 	fmt.Print("\033[32m") // Green color
 
 	// Show queen count
@@ -111,19 +111,21 @@ func renderStatus(queens Queens, showHelp bool, termWidth int, isSolved bool) {
 	// Show current symbol
 	status += fmt.Sprintf("  Symbol: %s", queens.GetSymbol())
 
-	// Show help status
-	helpStatus := "OFF"
-	if showHelp {
-		helpStatus = "ON"
+	// Show help status (only if not in hard mode)
+	if !hard {
+		helpStatus := "OFF"
+		if showHelp {
+			helpStatus = "ON"
+		}
+		status += fmt.Sprintf("  Help: %s", helpStatus)
 	}
-	status += fmt.Sprintf("  Help: %s", helpStatus)
 
 	printCentered(status, termWidth)
 	fmt.Print("\033[0m") // Reset color
 	fmt.Print("\r\n")
 }
 
-func renderControls(termWidth int, isSolved bool, noExit bool) {
+func renderControls(termWidth int, isSolved bool, noExit bool, hard bool) {
 	fmt.Print("\033[36m") // Cyan color
 	printCentered("┌────────────────────────────┐", termWidth)
 	printCentered("│ Controls:                  │", termWidth)
@@ -131,7 +133,9 @@ func renderControls(termWidth int, isSolved bool, noExit bool) {
 		printCentered("│ [Esc]       Exit           │", termWidth)
 	}
 	printCentered("│ [r]         Reset board    │", termWidth)
-	printCentered("│ [h]         Toggle help    │", termWidth)
+	if !hard {
+		printCentered("│ [h]         Toggle help    │", termWidth)
+	}
 	printCentered("│ [Space]     Place queen    │", termWidth)
 	printCentered("│ [x/Bksp]    Remove queen   │", termWidth)
 	printCentered("│ [b/w/q]     Change symbol  │", termWidth)
