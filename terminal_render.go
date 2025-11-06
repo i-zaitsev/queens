@@ -98,20 +98,33 @@ func renderTitle(termWidth int, isSolved bool) {
 	fmt.Print("\r\n")
 }
 
+func formatPrizeText(prize Prize) string {
+	return fmt.Sprintf("[+ %3d¢] %s", prize.Cents, prize.Label)
+}
+
 func renderPrizes(termWidth int, prizes []Prize, solvedCount int) {
 	fmt.Print("\033[36m")
 	printCentered("Prizes:", termWidth)
 	fmt.Print("\033[0m")
 
 	for _, prize := range prizes {
-		prizeText := fmt.Sprintf("[+ %3d¢] %s", prize.Cents, prize.Label)
+		prizeText := formatPrizeText(prize)
+		visibleLen := len(prizeText)
+
+		leftPadding := (termWidth - visibleLen) / 2
+		if leftPadding < 0 {
+			leftPadding = 0
+		}
+
+		fmt.Print(strings.Repeat(" ", leftPadding))
 		if solvedCount >= prize.Solutions {
 			fmt.Print("\033[32m")
-			printCentered(prizeText, termWidth)
-			fmt.Print("\033[0m")
-		} else {
-			printCentered(prizeText, termWidth)
 		}
+		fmt.Print(prizeText)
+		if solvedCount >= prize.Solutions {
+			fmt.Print("\033[0m")
+		}
+		fmt.Print("\r\n")
 	}
 
 	fmt.Print("\r\n")

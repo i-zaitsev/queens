@@ -9,8 +9,10 @@ import (
 	"strings"
 )
 
-type UserConfig struct {
-	Solved [12]int `json:"solved"`
+type Config struct {
+	Players map[string]struct {
+		Solved [12]int `json:"solved"`
+	} `json:"players"`
 }
 
 type Prize struct {
@@ -27,26 +29,46 @@ func GetConfigPath() string {
 	return filepath.Join(home, ".queens", "results.json")
 }
 
-func LoadConfig() (*UserConfig, error) {
+func LoadConfig(playerName string) (*Config, error) {
 	configPath := GetConfigPath()
 
 	data, err := os.ReadFile(configPath)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return &UserConfig{}, nil
+			config := &Config{
+				Players: make(map[string]struct {
+					Solved [12]int `json:"solved"`
+				}),
+			}
+			config.Players[playerName] = struct {
+				Solved [12]int `json:"solved"`
+			}{}
+			return config, nil
 		}
 		return nil, err
 	}
 
-	var config UserConfig
+	var config Config
 	if err := json.Unmarshal(data, &config); err != nil {
 		return nil, err
+	}
+
+	if config.Players == nil {
+		config.Players = make(map[string]struct {
+			Solved [12]int `json:"solved"`
+		})
+	}
+
+	if _, exists := config.Players[playerName]; !exists {
+		config.Players[playerName] = struct {
+			Solved [12]int `json:"solved"`
+		}{}
 	}
 
 	return &config, nil
 }
 
-func SaveConfig(config *UserConfig) error {
+func SaveConfig(config *Config) error {
 	configPath := GetConfigPath()
 
 	dir := filepath.Dir(configPath)
@@ -62,10 +84,17 @@ func SaveConfig(config *UserConfig) error {
 	return os.WriteFile(configPath, data, 0644)
 }
 
-func (c *UserConfig) MarkSolved(solutionNum int) {
-	if solutionNum >= 1 && solutionNum <= 12 {
-		c.Solved[solutionNum-1] = 1
+func GetPlayerData(config *Config, playerName string) [12]int {
+	if player, exists := config.Players[playerName]; exists {
+		return player.Solved
 	}
+	return [12]int{}
+}
+
+func SetPlayerData(config *Config, playerName string, solved [12]int) {
+	playerData := config.Players[playerName]
+	playerData.Solved = solved
+	config.Players[playerName] = playerData
 }
 
 func GetPrizesPath() string {

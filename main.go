@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"os"
 )
 
 func enterAltScreen() {
@@ -15,12 +16,14 @@ func exitAltScreen() {
 	fmt.Print("\033[?1049l")
 }
 
-func checkAndUpdateSolution(queens Queens, userConfig *UserConfig, fundamentals [][]Position) {
+func checkAndUpdateSolution(queens Queens, config *Config, playerName string, fundamentals [][]Position) {
 	if queens.IsSolved() {
 		matchNum := FindMatchingSolution(queens.queens, fundamentals)
-		if matchNum != -1 && userConfig.Solved[matchNum-1] == 0 {
-			userConfig.MarkSolved(matchNum)
-			SaveConfig(userConfig)
+		playerData := GetPlayerData(config, playerName)
+		if matchNum != -1 && playerData[matchNum-1] == 0 {
+			playerData[matchNum-1] = 1
+			SetPlayerData(config, playerName, playerData)
+			SaveConfig(config)
 		}
 	}
 }
@@ -36,22 +39,32 @@ func countSolved(solved [12]int) int {
 func main() {
 	noExit := flag.Bool("noexit", false, "disable Esc; use :q to exit")
 	hard := flag.Bool("hard", false, "hard mode: no help, show queen validity")
+	player := flag.String("player", "", "player name for tracking progress (required)")
 	flag.Parse()
+
+	if *player == "" {
+		fmt.Println("Error: -player flag is required")
+		fmt.Println("Usage: queens -player <name> [options]")
+		flag.PrintDefaults()
+		os.Exit(1)
+	}
 
 	fundamentalSolutions, err := LoadFundamentalSolutions()
 	if err != nil {
 		panic(fmt.Errorf("failed to load fundamental solutions: %v", err))
 	}
 
-	userConfig, err := LoadConfig()
+	config, err := LoadConfig(*player)
 	if err != nil {
-		panic(fmt.Errorf("failed to load user config: %v", err))
+		panic(fmt.Errorf("failed to load config: %v", err))
 	}
 
 	prizes, err := LoadPrizes()
 	if err != nil {
 		panic(fmt.Errorf("failed to load prizes: %v", err))
 	}
+
+	playerSolved := GetPlayerData(config, *player)
 
 	terminal := RawTerminal(*noExit)
 	defer terminal.Restore()
@@ -65,7 +78,7 @@ func main() {
 	commandMode := false
 	commandBuffer := ""
 
-	renderScreen(queens, cursorRow, cursorCol, showHelp, *noExit, *hard, commandBuffer, userConfig.Solved, prizes)
+	renderScreen(queens, cursorRow, cursorCol, showHelp, *noExit, *hard, commandBuffer, playerSolved, prizes)
 
 	for {
 		if cmd, err := terminal.ReadInput(); err == nil {
@@ -75,7 +88,8 @@ func main() {
 					commandMode = false
 					terminal.SetCommandMode(false)
 					commandBuffer = ""
-					renderScreen(queens, cursorRow, cursorCol, showHelp, *noExit, *hard, commandBuffer, userConfig.Solved, prizes)
+					playerSolved = GetPlayerData(config, *player)
+					renderScreen(queens, cursorRow, cursorCol, showHelp, *noExit, *hard, commandBuffer, playerSolved, prizes)
 				case CodePlace:
 					if commandBuffer == ":q" {
 						return
@@ -83,11 +97,12 @@ func main() {
 					commandMode = false
 					terminal.SetCommandMode(false)
 					commandBuffer = ""
-					renderScreen(queens, cursorRow, cursorCol, showHelp, *noExit, *hard, commandBuffer, userConfig.Solved, prizes)
+					playerSolved = GetPlayerData(config, *player)
+					renderScreen(queens, cursorRow, cursorCol, showHelp, *noExit, *hard, commandBuffer, playerSolved, prizes)
 				case CodeChar:
 					if data, ok := cmd.Data.(rune); ok {
 						commandBuffer += string(data)
-						renderScreen(queens, cursorRow, cursorCol, showHelp, *noExit, *hard, commandBuffer, userConfig.Solved, prizes)
+						renderScreen(queens, cursorRow, cursorCol, showHelp, *noExit, *hard, commandBuffer, playerSolved, prizes)
 					}
 				}
 				continue
@@ -101,46 +116,48 @@ func main() {
 				commandMode = true
 				terminal.SetCommandMode(true)
 				commandBuffer = ":"
-				renderScreen(queens, cursorRow, cursorCol, showHelp, *noExit, *hard, commandBuffer, userConfig.Solved, prizes)
+				renderScreen(queens, cursorRow, cursorCol, showHelp, *noExit, *hard, commandBuffer, playerSolved, prizes)
 
 			case CodeReset:
 				queens.Reset()
 				cursorRow, cursorCol = 0, 0
-				renderScreen(queens, cursorRow, cursorCol, showHelp, *noExit, *hard, commandBuffer, userConfig.Solved, prizes)
+				renderScreen(queens, cursorRow, cursorCol, showHelp, *noExit, *hard, commandBuffer, playerSolved, prizes)
 
 			case CodeHelp:
 				if !*hard {
 					showHelp = !showHelp
-					renderScreen(queens, cursorRow, cursorCol, showHelp, *noExit, *hard, commandBuffer, userConfig.Solved, prizes)
+					renderScreen(queens, cursorRow, cursorCol, showHelp, *noExit, *hard, commandBuffer, playerSolved, prizes)
 				}
 
 			case CodeSymbolBlack:
 				queens.SetSymbol(SymbolBlack)
-				renderScreen(queens, cursorRow, cursorCol, showHelp, *noExit, *hard, commandBuffer, userConfig.Solved, prizes)
+				renderScreen(queens, cursorRow, cursorCol, showHelp, *noExit, *hard, commandBuffer, playerSolved, prizes)
 
 			case CodeSymbolWhite:
 				queens.SetSymbol(SymbolWhite)
-				renderScreen(queens, cursorRow, cursorCol, showHelp, *noExit, *hard, commandBuffer, userConfig.Solved, prizes)
+				renderScreen(queens, cursorRow, cursorCol, showHelp, *noExit, *hard, commandBuffer, playerSolved, prizes)
 
 			case CodeSymbolAscii:
 				queens.SetSymbol(SymbolAscii)
-				renderScreen(queens, cursorRow, cursorCol, showHelp, *noExit, *hard, commandBuffer, userConfig.Solved, prizes)
+				renderScreen(queens, cursorRow, cursorCol, showHelp, *noExit, *hard, commandBuffer, playerSolved, prizes)
 
 			case CodePlace:
 				if queens.HasQueen(cursorRow, cursorCol) {
 					queens.RemoveQueen(cursorRow, cursorCol)
-					renderScreen(queens, cursorRow, cursorCol, showHelp, *noExit, *hard, commandBuffer, userConfig.Solved, prizes)
+					renderScreen(queens, cursorRow, cursorCol, showHelp, *noExit, *hard, commandBuffer, playerSolved, prizes)
 				} else if queens.Count() < 8 {
 					if *hard {
 						queens.queens = append(queens.queens, Position{Row: cursorRow, Col: cursorCol})
-						checkAndUpdateSolution(queens, userConfig, fundamentalSolutions)
-						renderScreen(queens, cursorRow, cursorCol, showHelp, *noExit, *hard, commandBuffer, userConfig.Solved, prizes)
+						checkAndUpdateSolution(queens, config, *player, fundamentalSolutions)
+						playerSolved = GetPlayerData(config, *player)
+						renderScreen(queens, cursorRow, cursorCol, showHelp, *noExit, *hard, commandBuffer, playerSolved, prizes)
 					} else {
 						if err := queens.PlaceQueen(cursorRow, cursorCol); err == nil {
-							checkAndUpdateSolution(queens, userConfig, fundamentalSolutions)
-							renderScreen(queens, cursorRow, cursorCol, showHelp, *noExit, *hard, commandBuffer, userConfig.Solved, prizes)
+							checkAndUpdateSolution(queens, config, *player, fundamentalSolutions)
+							playerSolved = GetPlayerData(config, *player)
+							renderScreen(queens, cursorRow, cursorCol, showHelp, *noExit, *hard, commandBuffer, playerSolved, prizes)
 						} else {
-							renderScreen(queens, cursorRow, cursorCol, showHelp, *noExit, *hard, commandBuffer, userConfig.Solved, prizes)
+							renderScreen(queens, cursorRow, cursorCol, showHelp, *noExit, *hard, commandBuffer, playerSolved, prizes)
 						}
 					}
 				}
@@ -148,25 +165,25 @@ func main() {
 			case CodeUp:
 				if cursorRow > 0 {
 					cursorRow--
-					renderScreen(queens, cursorRow, cursorCol, showHelp, *noExit, *hard, commandBuffer, userConfig.Solved, prizes)
+					renderScreen(queens, cursorRow, cursorCol, showHelp, *noExit, *hard, commandBuffer, playerSolved, prizes)
 				}
 
 			case CodeDown:
 				if cursorRow < boardSize-1 {
 					cursorRow++
-					renderScreen(queens, cursorRow, cursorCol, showHelp, *noExit, *hard, commandBuffer, userConfig.Solved, prizes)
+					renderScreen(queens, cursorRow, cursorCol, showHelp, *noExit, *hard, commandBuffer, playerSolved, prizes)
 				}
 
 			case CodeLeft:
 				if cursorCol > 0 {
 					cursorCol--
-					renderScreen(queens, cursorRow, cursorCol, showHelp, *noExit, *hard, commandBuffer, userConfig.Solved, prizes)
+					renderScreen(queens, cursorRow, cursorCol, showHelp, *noExit, *hard, commandBuffer, playerSolved, prizes)
 				}
 
 			case CodeRight:
 				if cursorCol < boardSize-1 {
 					cursorCol++
-					renderScreen(queens, cursorRow, cursorCol, showHelp, *noExit, *hard, commandBuffer, userConfig.Solved, prizes)
+					renderScreen(queens, cursorRow, cursorCol, showHelp, *noExit, *hard, commandBuffer, playerSolved, prizes)
 				}
 
 			case CodeNone:
