@@ -81,16 +81,12 @@ func (t *Terminal) ReadInput() (Cmd, error) {
 		if n == 1 {
 			char := buf[0]
 
-			// In command mode, treat most characters as literal input
 			if t.commandMode {
 				if char == 0x1b {
-					// Esc cancels command mode
 					return NewCmd(CodeCancelCommand), nil
 				} else if char == '\r' || char == '\n' {
-					// Enter executes command
 					return NewCmd(CodePlace), nil
 				} else if isPrintable(char) {
-					// Any printable character is added to command buffer
 					cmd := NewCmd(CodeChar)
 					cmd.Data = rune(char)
 					return cmd, nil
@@ -98,16 +94,12 @@ func (t *Terminal) ReadInput() (Cmd, error) {
 				return NewCmd(CodeNone), nil
 			}
 
-			// Normal mode - handle special keys
-			// Esc key handling
 			if char == 0x1b {
 				if t.noExit {
-					// In noExit mode without command mode active, Esc does nothing
 					return NewCmd(CodeNone), nil
 				}
 				return NewCmd(CodeExit), nil
 			} else if char == ':' {
-				// Start command mode
 				return NewCmd(CodeCommand), nil
 			} else if char == 'r' || char == 'R' {
 				return NewCmd(CodeReset), nil
@@ -120,14 +112,11 @@ func (t *Terminal) ReadInput() (Cmd, error) {
 			} else if char == 'q' || char == 'Q' {
 				return NewCmd(CodeSymbolAscii), nil
 			} else if char == ' ' || char == '\r' || char == '\n' {
-				// Space, Enter, or Return for placing queen
 				return NewCmd(CodePlace), nil
 			} else if char == 'x' || char == 'X' || char == 127 || char == 8 {
-				// x, X, Backspace (127), or Delete (8) for removing queen
 				return NewCmd(CodeRemove), nil
 			}
 		} else if n == 3 && buf[0] == 0x1b && buf[1] == '[' {
-			// Arrow keys
 			switch buf[2] {
 			case 'A':
 				return NewCmd(CodeUp), nil

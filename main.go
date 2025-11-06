@@ -6,13 +6,13 @@ import (
 )
 
 func enterAltScreen() {
-	fmt.Print("\033[?1049h") // Enter alt screen buffer
-	fmt.Print("\033[?25l")   // Hide cursor
+	fmt.Print("\033[?1049h")
+	fmt.Print("\033[?25l")
 }
 
 func exitAltScreen() {
-	fmt.Print("\033[?25h")   // Show cursor
-	fmt.Print("\033[?1049l") // Exit alt screen buffer
+	fmt.Print("\033[?25h")
+	fmt.Print("\033[?1049l")
 }
 
 func main() {
@@ -36,27 +36,22 @@ func main() {
 
 	for {
 		if cmd, err := terminal.ReadInput(); err == nil {
-			// Handle command mode separately
 			if commandMode {
 				switch cmd.Code {
 				case CodeExit, CodeCancelCommand:
-					// Esc or cancel in command mode
 					commandMode = false
 					terminal.SetCommandMode(false)
 					commandBuffer = ""
 					renderScreen(queens, cursorRow, cursorCol, showHelp, *noExit, *hard, commandBuffer)
 				case CodePlace:
-					// Enter pressed - evaluate command
 					if commandBuffer == ":q" {
 						return
 					}
-					// Invalid command, clear and exit command mode
 					commandMode = false
 					terminal.SetCommandMode(false)
 					commandBuffer = ""
 					renderScreen(queens, cursorRow, cursorCol, showHelp, *noExit, *hard, commandBuffer)
 				case CodeChar:
-					// Add character to command buffer
 					if data, ok := cmd.Data.(rune); ok {
 						commandBuffer += string(data)
 						renderScreen(queens, cursorRow, cursorCol, showHelp, *noExit, *hard, commandBuffer)
@@ -65,13 +60,11 @@ func main() {
 				continue
 			}
 
-			// Normal mode
 			switch cmd.Code {
 			case CodeExit:
 				return
 
 			case CodeCommand:
-				// Start command mode
 				commandMode = true
 				terminal.SetCommandMode(true)
 				commandBuffer = ":"
@@ -83,7 +76,6 @@ func main() {
 				renderScreen(queens, cursorRow, cursorCol, showHelp, *noExit, *hard, commandBuffer)
 
 			case CodeHelp:
-				// Ignore help toggle in hard mode
 				if !*hard {
 					showHelp = !showHelp
 					renderScreen(queens, cursorRow, cursorCol, showHelp, *noExit, *hard, commandBuffer)
@@ -102,37 +94,27 @@ func main() {
 				renderScreen(queens, cursorRow, cursorCol, showHelp, *noExit, *hard, commandBuffer)
 
 			case CodePlace:
-				// Try to place a queen at the current cursor position
-				// Don't allow more than 8 queens
 				if queens.Count() >= 8 {
 					break
 				}
 
 				if *hard {
-					// Hard mode: only check if occupied, allow placement under attack
 					if !queens.HasQueen(cursorRow, cursorCol) {
 						queens.queens = append(queens.queens, Position{Row: cursorRow, Col: cursorCol})
 						renderScreen(queens, cursorRow, cursorCol, showHelp, *noExit, *hard, commandBuffer)
 					}
 				} else {
-					// Normal mode: validate attack
 					if err := queens.PlaceQueen(cursorRow, cursorCol); err == nil {
-						// Successfully placed, render
 						renderScreen(queens, cursorRow, cursorCol, showHelp, *noExit, *hard, commandBuffer)
 					} else {
-						// Failed to place (occupied or under attack), just re-render
-						// The visual feedback (red cells) should indicate why
 						renderScreen(queens, cursorRow, cursorCol, showHelp, *noExit, *hard, commandBuffer)
 					}
 				}
 
 			case CodeRemove:
-				// Try to remove a queen at the current cursor position
 				if err := queens.RemoveQueen(cursorRow, cursorCol); err == nil {
-					// Successfully removed
 					renderScreen(queens, cursorRow, cursorCol, showHelp, *noExit, *hard, commandBuffer)
 				}
-				// If no queen to remove, just ignore silently
 
 			case CodeUp:
 				if cursorRow > 0 {
@@ -159,7 +141,6 @@ func main() {
 				}
 
 			case CodeNone:
-				// Ignore unknown input
 			}
 		} else {
 			panic("error reading from terminal")

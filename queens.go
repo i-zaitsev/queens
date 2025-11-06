@@ -25,9 +25,9 @@ type Position struct {
 type QueenSymbol int
 
 const (
-	SymbolBlack QueenSymbol = iota // ♛
-	SymbolWhite                    // ♕
-	SymbolAscii                    // Q
+	SymbolBlack QueenSymbol = iota
+	SymbolWhite
+	SymbolAscii
 )
 
 type Queens struct {
@@ -103,15 +103,12 @@ func (q *Queens) HasQueen(row, col int) bool {
 
 func (q *Queens) IsUnderAttack(row, col int) bool {
 	for _, queen := range q.queens {
-		// Same row
 		if queen.Row == row {
 			return true
 		}
-		// Same column
 		if queen.Col == col {
 			return true
 		}
-		// Diagonal (both diagonals)
 		rowDiff := abs(queen.Row - row)
 		colDiff := abs(queen.Col - col)
 		if rowDiff == colDiff {
@@ -124,20 +121,16 @@ func (q *Queens) IsUnderAttack(row, col int) bool {
 // IsQueenUnderAttack checks if a queen at the given position is under attack by any OTHER queen
 func (q *Queens) IsQueenUnderAttack(row, col int) bool {
 	for _, queen := range q.queens {
-		// Skip the queen at the position we're checking
 		if queen.Row == row && queen.Col == col {
 			continue
 		}
 
-		// Same row
 		if queen.Row == row {
 			return true
 		}
-		// Same column
 		if queen.Col == col {
 			return true
 		}
-		// Diagonal (both diagonals)
 		rowDiff := abs(queen.Row - row)
 		colDiff := abs(queen.Col - col)
 		if rowDiff == colDiff {
@@ -151,35 +144,28 @@ func (q *Queens) GetAttackedPositions() map[Position]bool {
 	attacked := make(map[Position]bool)
 
 	for _, queen := range q.queens {
-		// Mark all positions in the same row
 		for col := 0; col < boardSize; col++ {
 			if col != queen.Col {
 				attacked[Position{Row: queen.Row, Col: col}] = true
 			}
 		}
 
-		// Mark all positions in the same column
 		for row := 0; row < boardSize; row++ {
 			if row != queen.Row {
 				attacked[Position{Row: row, Col: queen.Col}] = true
 			}
 		}
 
-		// Mark all positions on both diagonals
 		for i := 1; i < boardSize; i++ {
-			// Top-left diagonal
 			if inBounds(queen.Row-i, queen.Col-i) {
 				attacked[Position{Row: queen.Row - i, Col: queen.Col - i}] = true
 			}
-			// Top-right diagonal
 			if inBounds(queen.Row-i, queen.Col+i) {
 				attacked[Position{Row: queen.Row - i, Col: queen.Col + i}] = true
 			}
-			// Bottom-left diagonal
 			if inBounds(queen.Row+i, queen.Col-i) {
 				attacked[Position{Row: queen.Row + i, Col: queen.Col - i}] = true
 			}
-			// Bottom-right diagonal
 			if inBounds(queen.Row+i, queen.Col+i) {
 				attacked[Position{Row: queen.Row + i, Col: queen.Col + i}] = true
 			}
@@ -194,12 +180,10 @@ func (q *Queens) Count() int {
 }
 
 func (q *Queens) IsSolved() bool {
-	// Must have exactly 8 queens
 	if len(q.queens) != boardSize {
 		return false
 	}
 
-	// All queens must be safe (not under attack)
 	for _, queen := range q.queens {
 		if q.IsQueenUnderAttack(queen.Row, queen.Col) {
 			return false
@@ -223,7 +207,6 @@ func (q *Queens) Pretty(cursorRow, cursorCol int, showAttacked bool, hardMode bo
 
 	queenSymbol := q.GetSymbol()
 
-	// Top border
 	result.WriteString("┌")
 	for col := 0; col < boardSize; col++ {
 		result.WriteString("───")
@@ -233,7 +216,6 @@ func (q *Queens) Pretty(cursorRow, cursorCol int, showAttacked bool, hardMode bo
 	}
 	result.WriteString("┐\n")
 
-	// Board rows
 	for row := 0; row < boardSize; row++ {
 		result.WriteString("│")
 
@@ -244,33 +226,31 @@ func (q *Queens) Pretty(cursorRow, cursorCol int, showAttacked bool, hardMode bo
 
 			if hasQueen {
 				if hardMode {
-					// Hard mode: show queens in green or red based on attack status
 					queenUnderAttack := q.IsQueenUnderAttack(row, col)
 					if isCursor {
 						if queenUnderAttack {
-							result.WriteString(fmt.Sprintf("\033[1;31;7m %s \033[0m", queenSymbol)) // Red + inverse
+							result.WriteString(fmt.Sprintf("\033[1;31;7m %s \033[0m", queenSymbol))
 						} else {
-							result.WriteString(fmt.Sprintf("\033[1;32;7m %s \033[0m", queenSymbol)) // Green + inverse
+							result.WriteString(fmt.Sprintf("\033[1;32;7m %s \033[0m", queenSymbol))
 						}
 					} else {
 						if queenUnderAttack {
-							result.WriteString(fmt.Sprintf("\033[1;31m %s \033[0m", queenSymbol)) // Red
+							result.WriteString(fmt.Sprintf("\033[1;31m %s \033[0m", queenSymbol))
 						} else {
-							result.WriteString(fmt.Sprintf("\033[1;32m %s \033[0m", queenSymbol)) // Green
+							result.WriteString(fmt.Sprintf("\033[1;32m %s \033[0m", queenSymbol))
 						}
 					}
 				} else {
-					// Normal mode: white queens
 					if isCursor {
-						result.WriteString(fmt.Sprintf("\033[1;7m %s \033[0m", queenSymbol)) // Bold + inverse
+						result.WriteString(fmt.Sprintf("\033[1;7m %s \033[0m", queenSymbol))
 					} else {
-						result.WriteString(fmt.Sprintf("\033[1m %s \033[0m", queenSymbol)) // Bold
+						result.WriteString(fmt.Sprintf("\033[1m %s \033[0m", queenSymbol))
 					}
 				}
 			} else if isCursor {
-				result.WriteString("\033[1;7m   \033[0m") // Inverse cursor
+				result.WriteString("\033[1;7m   \033[0m")
 			} else if isAttacked {
-				result.WriteString("\033[41m   \033[0m") // Red background
+				result.WriteString("\033[41m   \033[0m")
 			} else {
 				result.WriteString("   ")
 			}
@@ -280,7 +260,6 @@ func (q *Queens) Pretty(cursorRow, cursorCol int, showAttacked bool, hardMode bo
 
 		result.WriteString("\n")
 
-		// Row separator
 		if row < boardSize-1 {
 			result.WriteString("├")
 			for col := 0; col < boardSize; col++ {
@@ -293,7 +272,6 @@ func (q *Queens) Pretty(cursorRow, cursorCol int, showAttacked bool, hardMode bo
 		}
 	}
 
-	// Bottom border
 	result.WriteString("└")
 	for col := 0; col < boardSize; col++ {
 		result.WriteString("───")
