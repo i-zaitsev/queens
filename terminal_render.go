@@ -31,10 +31,8 @@ func renderScreen(queens Queens, cursorRow, cursorCol int, showHelp bool, noExit
 	// Render status
 	renderStatus(queens, showHelp, termWidth, isSolved)
 
-	// Render controls (only if noExit is false)
-	if !noExit {
-		renderControls(termWidth, isSolved)
-	}
+	// Render controls
+	renderControls(termWidth, isSolved, noExit)
 
 	// Render command line if in command mode
 	if commandBuffer != "" {
@@ -125,11 +123,13 @@ func renderStatus(queens Queens, showHelp bool, termWidth int, isSolved bool) {
 	fmt.Print("\r\n")
 }
 
-func renderControls(termWidth int, isSolved bool) {
+func renderControls(termWidth int, isSolved bool, noExit bool) {
 	fmt.Print("\033[36m") // Cyan color
 	printCentered("┌────────────────────────────┐", termWidth)
 	printCentered("│ Controls:                  │", termWidth)
-	printCentered("│ [Esc]       Exit           │", termWidth)
+	if !noExit {
+		printCentered("│ [Esc]       Exit           │", termWidth)
+	}
 	printCentered("│ [r]         Reset board    │", termWidth)
 	printCentered("│ [h]         Toggle help    │", termWidth)
 	printCentered("│ [Space]     Place queen    │", termWidth)
